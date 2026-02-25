@@ -1,5 +1,7 @@
 # Netlify Python Function
 # Requires: pip install psycopg2-binary duckdb pandas
+import os
+print("DB_HOST:", os.getenv("DB_HOST"))
 
 import json
 from nes_query import (
