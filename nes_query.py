@@ -24,7 +24,7 @@ _duck_conn = None
 def get_pg_connection():
     global _pg_conn
     if _pg_conn is None or _pg_conn.closed:
-        _pg_conn = psycopg2.connect(connect_timeout=5, **DB_CONFIG)
+        _pg_conn = psycopg2.connect(connect_timeout=5, sslmode="require",**DB_CONFIG)
         _pg_conn.autocommit = True
     return _pg_conn
 
