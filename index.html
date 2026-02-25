@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NES Analytics SaaS</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+
+<div class="min-h-full flex">
+
+  <!-- Sidebar -->
+  <aside class="w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-6 shadow-xl">
+
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">NES Analytics</h1>
+        <p class="text-xs text-slate-500">Smart Services</p>
+      </div>
+      <button onclick="document.documentElement.classList.toggle('dark')" 
+              class="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+        🌙
+      </button>
+    </div>
+
+    <div class="space-y-4">
+
+      <select id="category" class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700">
+        <option value="1">NADI4U</option>
+        <option value="2">NADI2U</option>
+        <option value="3">OTHERS</option>
+      </select>
+
+      <input id="subcategory" type="number" placeholder="Subcategory"
+        class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700" />
+
+      <input id="program" type="number" placeholder="Program"
+        class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700" />
+
+      <input id="start" type="date"
+        class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700" />
+
+      <input id="end" type="date"
+        class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700" />
+
+      <input id="org" type="text" placeholder="Organization UUID"
+        class="w-full px-3 py-2 rounded-xl border dark:bg-slate-700" />
+
+      <button onclick="applyFilters()"
+        class="w-full py-2 rounded-xl bg-indigo-600 text-white">
+        Apply Filters
+      </button>
+
+      <button onclick="exportCSV()"
+        class="w-full py-2 rounded-xl bg-emerald-600 text-white">
+        Export CSV
+      </button>
+
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 p-8 space-y-8 overflow-y-auto">
+
+    <!-- KPI -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+        <p>Total Events</p>
+        <h2 id="events" class="text-3xl font-bold">-</h2>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+        <p>Participants</p>
+        <h2 id="participants" class="text-3xl font-bold">-</h2>
+      </div>
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+        <p>Achievement %</p>
+        <h2 id="pct" class="text-3xl font-bold">-</h2>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
+      <canvas id="pillarChart"></canvas>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let chart;
+
+async function applyFilters() {
+
+  const params = new URLSearchParams({
+    category: category.value,
+    subcategory: subcategory.value,
+    program: program.value,
+    start: start.value,
+    end: end.value,
+    org: org.value
+  });
+
+  const res = await fetch(`/.netlify/functions/dashboard?${params}`);
+  const data = await res.json();
+
+  events.textContent = data.events.total_all || 0;
+  participants.textContent = data.participants.current || 0;
+  pct.textContent = (data.participants.percentage || 0) + "%";
+
+  const ctx = document.getElementById("pillarChart");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.pillar.map(p => p.title),
+      datasets: [{
+        label: "Participants",
+        data: data.pillar.map(p => p.current)
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+}
+
+function exportCSV() {
+  window.open(`/.netlify/functions/export?category=${category.value}`);
+}
+
+applyFilters();
+</script>
+
+</body>
+</html>
